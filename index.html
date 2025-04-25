@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Duration Calculator</title>
+  <style>
+    :root {
+      --primary-color: #0078D4;
+      --accent-color: #106EBE;
+      --background-light: #F3F2F1;
+      --white: #ffffff;
+      --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--background-light);
+      margin: 0;
+      padding: 0;
+      color: #323130;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      background: var(--white);
+      border-radius: 8px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.75em;
+      color: var(--primary-color);
+    }
+
+    .job-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      background: #EFF6FC;
+      padding: 10px;
+      border-radius: 6px;
+      flex-wrap: wrap;
+    }
+
+    .delete-btn {
+      background: #A4262C;
+      color: var(--white);
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      align-self: center;
+    }
+
+
+    .job-label {
+      font-weight: 600;
+      font-size: 1em;
+      color: #323130;
+      width: auto;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #C8C6C4;
+      font-size: 0.95em;
+      background: #ffffff;
+      color: #323130;
+    }
+
+
+    .delete-btn:hover {
+      background: #8E1B1F;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--primary-color);
+      color: var(--white);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin: 10px 5px 0 0;
+    }
+
+    button:hover {
+      background-color: var(--accent-color);
+    }
+
+    .modal, .error-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content, .error-content {
+      background: var(--white);
+      color: #323130;
+      padding: 30px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .output-box {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #E1DFDD;
+      border-radius: 6px;
+      font-size: 1em;
+      text-align: center;
+      color: #201F1E;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Job Duration Calculator</h2>
+    <div id="jobContainer"></div>
+    <button onclick="addJob()">Add Job</button>
+    <button onclick="calculateTotal()">Calculate</button>
+    <div id="output" class="output-box" style="display:none;"></div>
+  </div>
+
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <p id="resultText"></p>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <div id="errorModal" class="error-modal">
+    <div class="error-content">
+      <p id="errorText"></p>
+      <button onclick="closeErrorModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    function createMonthDropdown(className) {
+      const select = document.createElement('select');
+      select.className = className + '-month';
+      months.forEach((month, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = month;
+        select.appendChild(option);
+      });
+      return select;
+    }
+
+    function createYearDropdown(className) {
+      const select = document.createElement('select');
+      select.className = className + '-year';
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear; year >= 1950; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        select.appendChild(option);
+      }
+      return select;
+    }
+
+    function renumberJobs() {
+      const labels = document.querySelectorAll('.job-label');
+      labels.forEach((label, index) => {
+        label.textContent = `Job ${index + 1}`;
+      });
+    }
+
+    function addJob() {
+      const container = document.getElementById('jobContainer');
+      const row = document.createElement('div');
+      row.classList.add('job-row');
+
+      const label = document.createElement('span');
+      label.className = 'job-label';
+
+      const startMonth = createMonthDropdown('start');
+      const startYear = createYearDropdown('start');
+      const endMonth = createMonthDropdown('end');
+      const endYear = createYearDropdown('end');
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.onclick = () => {
+        row.remove();
+        renumberJobs();
+      };
+
+      row.appendChild(label);
+      row.appendChild(startMonth);
+      row.appendChild(startYear);
+      row.appendChild(endMonth);
+      row.appendChild(endYear);
+      row.appendChild(deleteBtn);
+
+      container.appendChild(row);
+      renumberJobs();
+    }
+
+    function showError(message) {
+      document.getElementById('errorText').textContent = message;
+      document.getElementById('errorModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('resultModal').style.display = 'none';
+    }
+
+    function closeErrorModal() {
+      document.getElementById('errorModal').style.display = 'none';
+    }
+
+    function calculateTotal() {
+      const rows = document.querySelectorAll('.job-row');
+      let totalMonths = 0;
+
+      for (const row of rows) {
+        const startMonth = row.querySelector('.start-month');
+        const startYear = row.querySelector('.start-year');
+        const endMonth = row.querySelector('.end-month');
+        const endYear = row.querySelector('.end-year');
+
+        if (!startMonth || !startYear || !endMonth || !endYear) {
+          showError("Please select both start and end month/year for all jobs.");
+          return;
+        }
+
+        const start = new Date(+startYear.value, +startMonth.value);
+        const end = new Date(+endYear.value, +endMonth.value);
+
+        if (start > end) {
+          showError("Start date cannot be after end date.");
+          return;
+        }
+
+        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+        totalMonths += months;
+      }
+
+      const years = Math.floor(totalMonths / 12);
+      const months = totalMonths % 12;
+
+      document.getElementById('output').textContent = `Total Duration: ${years} year(s) and ${months} month(s)`;
+      document.getElementById('output').style.display = 'block';
+    }
+
+    addJob();
+  </script>
+</body>
+</html>
