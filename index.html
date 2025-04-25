@@ -325,34 +325,59 @@
     function calculateTotal() {
       const rows = document.querySelectorAll('.job-row');
       let totalMonths = 0;
+      const jobDates = [];
 
-      for (const row of rows) {
+      // Step 1: Gather all job date ranges
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
         const startMonth = row.querySelector('.start-month');
         const startYear = row.querySelector('.start-year');
         const endMonth = row.querySelector('.end-month');
         const endYear = row.querySelector('.end-year');
 
+        // Skip this row if any of the dropdowns are missing (e.g., row partially deleted)
         if (!startMonth || !startYear || !endMonth || !endYear) {
-          showError("Please select both start and end month/year for all jobs.");
-          return;
+          continue;
         }
 
         const start = new Date(+startYear.value, +startMonth.value);
         const end = new Date(+endYear.value, +endMonth.value);
 
         if (start > end) {
-          showError("Start date cannot be after end date.");
+          showError(`Start date cannot be after end date in Job ${i + 1}.`);
           return;
         }
 
-        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+        jobDates.push({ index: i + 1, start, end });
+      }
+
+
+      // Step 2: Check for overlapping job dates
+      for (let i = 0; i < jobDates.length; i++) {
+        for (let j = i + 1; j < jobDates.length; j++) {
+          const a = jobDates[i];
+          const b = jobDates[j];
+          const overlap = a.start <= b.end && b.start <= a.end;
+
+          if (overlap) {
+            showError(`Job ${a.index} and Job ${b.index} are conflicting. Please check.`);
+            return;
+          }
+        }
+      }
+
+      // Step 3: If no conflicts, calculate total
+      for (const job of jobDates) {
+        const months = (job.end.getFullYear() - job.start.getFullYear()) * 12 +
+                      (job.end.getMonth() - job.start.getMonth()) + 1;
         totalMonths += months;
       }
 
       const years = Math.floor(totalMonths / 12);
       const months = totalMonths % 12;
 
-      document.getElementById('output').textContent = `Total Duration: ${years} year(s) and ${months} month(s)`;
+      document.getElementById('output').textContent =
+        `Total Duration: ${years} year(s) and ${months} month(s)`;
       document.getElementById('output').style.display = 'block';
     }
 
