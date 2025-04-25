@@ -25,7 +25,7 @@
       margin: 50px auto;
       background: var(--white);
       border-radius: 8px;
-      padding: 40px;
+      padding: 5px 30px 30px 30px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 
@@ -90,7 +90,6 @@
       font-weight: 600;
       cursor: pointer;
       transition: background 0.3s;
-      margin: 10px 5px 0 0;
     }
 
     button:hover {
@@ -118,6 +117,60 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
 
+    .fancy-popup {
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .popup-header {
+      background-color: #f3f3f3;
+      padding: 7px;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .popup-body {
+      padding: 25px;
+      font-size: 1.1em;
+      text-align: center;
+      line-height: 1.6;
+      color: #2d2d2d;
+    }
+
+    .popup-footer {
+      padding: 0px 2px 3px 2px;
+      text-align: center;
+    }
+
+    .close-btn {
+      background-color: #0078D4;
+      color: white;
+      font-weight: bold;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin: 0px 0px 12px 0px;
+    }
+
+    .close-btn:hover {
+      background-color: #106EBE;
+    }
+
+    @keyframes fadeIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+
+
     .output-box {
       margin-top: 20px;
       padding: 15px;
@@ -128,6 +181,10 @@
       color: #201F1E;
       font-weight: 500;
     }
+
+  .container + .container {
+    margin-top: 30px;
+  }
   </style>
 </head>
 <body>
@@ -139,12 +196,41 @@
     <div id="output" class="output-box" style="display:none;"></div>
   </div>
 
+  <!-- NEW: Age Calculator -->
+  <div class="container">
+    <h2>Age Calculator</h2>
+    <div class="job-row">
+      <label for="birthYear">Year:</label>
+      <select id="birthYear"></select>
+
+      <label for="birthMonth">Month:</label>
+      <select id="birthMonth"></select>
+
+      <label for="birthDate">Date:</label>
+      <select id="birthDate"></select>
+    </div>
+    <button onclick="calculateAge()">Age</button>
+  </div>
+
   <div id="resultModal" class="modal">
     <div class="modal-content">
       <p id="resultText"></p>
       <button onclick="closeModal()">Close</button>
     </div>
   </div>
+
+  <div id="ageResultModal" class="modal">
+    <div class="fancy-popup">
+      <div class="popup-header">
+        <span>Age</span>
+      </div>
+      <div class="popup-body" id="ageResultText"></div>
+      <div class="popup-footer">
+        <button onclick="closeAgeModal()" class="close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+  
 
   <div id="errorModal" class="error-modal">
     <div class="error-content">
@@ -270,6 +356,84 @@
       document.getElementById('output').style.display = 'block';
     }
 
+    // Add options to Birth dropdowns
+    function populateBirthDropdowns() {
+      const birthYear = document.getElementById('birthYear');
+      const birthMonth = document.getElementById('birthMonth');
+      const birthDate = document.getElementById('birthDate');
+
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear; year >= 1900; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        birthYear.appendChild(option);
+      }
+
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      months.forEach((month, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = month;
+        birthMonth.appendChild(option);
+      });
+
+      for (let date = 1; date <= 31; date++) {
+        const option = document.createElement('option');
+        option.value = date;
+        option.textContent = date;
+        birthDate.appendChild(option);
+      }
+    }
+
+    // Calculate Age
+    function calculateAge() {
+      const year = document.getElementById('birthYear').value;
+      const month = document.getElementById('birthMonth').value;
+      const date = document.getElementById('birthDate').value;
+
+      if (!year || !month || !date) {
+        showError("Please select Year, Month, and Date!");
+        return;
+      }
+
+      const birthDateObj = new Date(year, month, date);
+      const today = new Date();
+
+      if (birthDateObj > today) {
+        showError("Birthdate cannot be in the future!");
+        return;
+      }
+
+      let years = today.getFullYear() - birthDateObj.getFullYear();
+      let months = today.getMonth() - birthDateObj.getMonth();
+      let days = today.getDate() - birthDateObj.getDate();
+
+      if (days < 0) {
+        months--;
+        days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+      }
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      // Calculate total lived days
+      const timeDiff = today - birthDateObj;
+      const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+      document.getElementById('ageResultText').innerHTML =
+        `${years} year(s), ${months} month(s), and ${days} day(s)!<br><br>` +
+        `Wow, you have lived for <strong>${totalDays}</strong> days!`;
+
+      document.getElementById('ageResultModal').style.display = 'flex';
+    }
+
+    function closeAgeModal() {
+      document.getElementById('ageResultModal').style.display = 'none';
+    }
+
+    populateBirthDropdowns();
     addJob();
   </script>
 </body>
